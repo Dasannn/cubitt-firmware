@@ -2,6 +2,8 @@
 
 Investigación del firmware y protocolo BLE del **Cubitt VIVA Pro 2**: notas técnicas, herramientas de análisis y reempaquetado del contenedor OTA. Proyecto independiente, sin afiliación con Cubitt, Creek o Actions Technology.
 
+**Descargas:** actualmente no hay una versión modificada del firmware disponible para instalar. La guía permite extraer y estudiar la imagen original desde una APK propia. Los cambios locales de Gemini/DeepSeek pertenecen a la app Android y su proxy; no son una modificación del firmware del reloj.
+
 ## Estado
 
 - Se analizó una imagen `zephyr.fw` incluida en la APK de Cubitt Pro 2.1.11. Su presencia en la APK no demuestra que sea la imagen instalada o compatible con todas las unidades.
@@ -57,7 +59,7 @@ Los scripts de Ghidra usan la base `0x10010000` y direcciones de la imagen indic
 
 No se distribuyen APKs, imágenes de firmware, SDKs de terceros, instalaciones de Ghidra, capturas, bases de datos, claves, certificados, logs, datos personales ni archivos generados. También se excluyen la app Gemini Bridge y los proxies de IA, ajenos al alcance del firmware. Las referencias históricas a `scratchpad/` corresponden a scripts no disponibles en esta publicación.
 
-El `.gitignore` permite únicamente las rutas de documentación y código seleccionadas. Revisa cualquier nuevo documento antes de añadirlo: un reporte puede contener identificadores o credenciales aunque sea texto.
+El `.gitignore` permite únicamente los archivos revisados, por nombre exacto. Revisa cualquier nuevo documento antes de permitirlo: un reporte puede contener identificadores o credenciales aunque sea texto. Esta exclusión no protege contra secretos añadidos a un archivo ya versionado ni contra `git add -f`.
 
 ## Referencias
 
