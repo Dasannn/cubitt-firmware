@@ -1,8 +1,32 @@
-# Cubitt firmware research
+# Cubitt VIVA Pro 2 — Ingeniería inversa
 
-Investigación del firmware y protocolo BLE del **Cubitt VIVA Pro 2**: notas técnicas, herramientas de análisis y reempaquetado del contenedor OTA. Proyecto independiente, sin afiliación con Cubitt, Creek o Actions Technology.
+Documentación y herramientas del proceso de ingeniería inversa del firmware y del protocolo Bluetooth del **Cubitt VIVA Pro 2**. El objetivo es entender cómo la app se comunica con el reloj, cómo se empaqueta una actualización y qué falta para desarrollar modificaciones reproducibles. Proyecto independiente, sin afiliación con Cubitt, Creek o Actions Technology.
 
 **Descargas:** actualmente no hay una versión modificada del firmware disponible para instalar. La guía permite extraer y estudiar la imagen original desde una APK propia. Los cambios locales de Gemini/DeepSeek pertenecen a la app Android y su proxy; no son una modificación del firmware del reloj.
+
+## Qué puedes hacer con este repositorio
+
+| Actividad | Cómo empezar | Resultado |
+|---|---|---|
+| Obtener la imagen original de referencia | [Guía de extracción](docs/FIRMWARE_RESEARCH.md) y una APK propia | Contenedor `zephyr.fw` y payload para análisis local |
+| Comprobar integridad e identificar la muestra | `repack_ota.py verify` y SHA256 | Comparación de CRC32, longitudes y hashes documentados |
+| Estudiar el código del firmware | Ghidra y `analysis/ghidra_scripts/` | Funciones, referencias y rutas de llamadas para la muestra analizada |
+| Explorar Bluetooth del reloj | `cubitt_ble_recon.py` y [checklist BLE](docs/BLE_CHECKLIST.md) | Inventario de servicios, características y observación opcional de notificaciones |
+| Entender la comunicación de la app | [Protocolo BLE](docs/BLE_WIRE_PROTOCOL.md) | Interpretación documentada de tramas C1 y transferencias D1–D4 |
+| Experimentar con el contenedor sin conectarse al reloj | `repack_ota.py extract`, `build` y `patch` | Archivos locales reempaquetados con CRC32 del contenedor recalculado |
+| Continuar la investigación | Comparar otra versión y documentar diferencias | Nueva evidencia sobre formatos, plataforma y transporte |
+
+El reempaquetado produce un archivo de experimentación. Las herramientas publicadas no implementan un instalador de firmware modificado ni una integración lista para usar de Gemini/DeepSeek.
+
+## Cómo se investigó
+
+1. **Inspección de la app Android.** Se inventariaron el paquete y sus bibliotecas, se buscaron cadenas relacionadas con OTA, BLE y voz, y se revisaron los assets de la APK.
+2. **Extracción y análisis del contenedor.** Se encontró `zephyr.fw` dentro de los assets y se contrastaron sus bytes, tamaños y CRC. La hipótesis inicial de un payload en `0x240` se corrigió a `0x40`.
+3. **Análisis estático en Ghidra.** Se estudiaron funciones de transferencia, validación e items SDFS mediante descompilación y referencias cruzadas. Los scripts incluidos ayudan a repetir esa exploración sobre la misma muestra.
+4. **Comparación con el SDK de plataforma.** Se relacionaron nombres, estructuras y rutas con el SDK público de Actions. Estas correspondencias orientan la investigación; no confirman por sí solas la configuración del reloj.
+5. **Observación de BLE.** Las notas registran exploraciones GATT y capturas de comunicación app–reloj con instrumentación. Se distinguieron las tramas C1, el transporte crudo D1–D4 y los items SDFS. Los scripts originales de instrumentación y las capturas completas no están incluidos; se publican las observaciones técnicas y el explorador GATT.
+
+Este proceso dejó correcciones y preguntas abiertas. Para interpretar los resultados hay que distinguir los bytes comprobados en la muestra, las observaciones registradas en el reloj y las hipótesis derivadas del SDK.
 
 ## Estado
 
@@ -33,6 +57,11 @@ Las notas de julio de 2026 conservan resultados e hipótesis de distintas etapas
 
 ## Uso local
 
+```powershell
+git clone https://github.com/Dasannn/cubitt-firmware.git
+cd cubitt-firmware
+```
+
 Python 3 para reempaquetado; PowerShell y Android SDK Platform Tools para los scripts ADB. Estos últimos buscan `adb.exe` en `%LOCALAPPDATA%\Android\Sdk\platform-tools`. Ejecuta los comandos desde la raíz del repositorio.
 
 ```powershell
@@ -54,6 +83,12 @@ py tools/ble/cubitt_ble_recon.py --addr AA:BB:CC:DD:EE:FF --observe 0
 Sustituye la dirección de ejemplo por la de tu reloj. `--observe 0` desactiva las suscripciones; el valor por defecto es 20 segundos. Suscribirse a notificaciones configura el descriptor CCCD aunque no envíe datos de aplicación ni comandos de actualización.
 
 Los scripts de Ghidra usan la base `0x10010000` y direcciones de la imagen indicada en la guía. Sus resultados no son transferibles automáticamente a otras versiones.
+
+## Cómo contribuir
+
+Puedes abrir un issue o un pull request con correcciones, diferencias entre versiones o resultados reproducibles. Indica el modelo, la versión de la app, el SHA256 de la imagen, la herramienta utilizada y los pasos para repetir la observación. Distingue el resultado observado de su interpretación.
+
+Los siguientes pasos son confirmar la variante de hardware, contrastar los checksums con más muestras, estudiar el bootloader real y validar un respaldo y una recuperación antes de probar firmware modificado. Para compartir evidencia, usa extractos mínimos anonimizados; elimina direcciones de tus dispositivos, contactos, tokens y otros datos personales.
 
 ## Archivos excluidos
 
