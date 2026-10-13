@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 """
-repack_ota.py - Reempaqueta el contenedor OTA 5A8778A5 del Cubitt Viva Pro 2.
+repack_ota.py - Repack the Cubitt Viva Pro 2 5A8778A5 OTA container.
 
-Formato del contenedor (verificado byte a byte contra analysis/firmware_candidates/zephyr.fw):
-  0x00  4  magic         5A 87 78 A5
-  0x0C  4  crc32(payload) zlib.crc32, cubre payload[0x40:]   <-- unico gate de integridad
-  0x10  4  len payload    LE u32
-  0x14  4  len payload    LE u32 (copia)
-  0x20 16  nombre         "zephyr.bin"
-  0x40  .. payload        imagen app raw @0x10010000
+Container format (checked byte by byte against analysis/firmware_candidates/zephyr.fw):
+  0x00  4  magic          5A 87 78 A5
+  0x0C  4  crc32(payload) zlib.crc32 over the payload starting at file offset 0x40
+  0x10  4  payload length LE u32
+  0x14  4  payload length LE u32 (copy)
+  0x20 16  name           "zephyr.bin"
+  0x40  .. payload        raw app image @0x10010000
 
-No hay firma ni CMAC en la ruta de imagen. Reempacar = patch de payload + recomputar CRC32.
+Repacking patches the payload and recomputes the container CRC32.
+This does not establish whether the device bootloader accepts modified images.
 
-Uso:
-  # Verificar que un .fw tiene el CRC32 correcto:
+Usage:
+  # Check that a .fw has the correct CRC32:
   python repack_ota.py verify  zephyr.fw
 
-  # Volcar el payload (imagen app) a un archivo para editar:
+  # Extract the payload (app image) to a file for editing:
   python repack_ota.py extract zephyr.fw payload.bin
 
-  # Reconstruir el contenedor desde un payload (posiblemente modificado):
+  # Rebuild the container from a possibly modified payload:
   python repack_ota.py build   zephyr.fw payload.bin zephyr_mod.fw
 
-  # Patch in-place de N bytes en un offset del payload y reconstruir (mismo tamano):
+  # Patch N bytes at a payload offset and rebuild without changing size:
   python repack_ota.py patch   zephyr.fw <off_hex> <hexbytes> zephyr_mod.fw
 """
 import sys, zlib, struct
@@ -37,7 +38,7 @@ OFF_LEN2  = 0x14
 
 def parse(fw: bytes):
     if fw[OFF_MAGIC:OFF_MAGIC+4] != MAGIC:
-        raise SystemExit(f"magic invalido: {fw[:4].hex()} (esperado 5a8778a5)")
+        raise SystemExit(f"invalid magic: {fw[:4].hex()} (expected 5a8778a5)")
     stored_crc = struct.unpack_from("<I", fw, OFF_CRC32)[0]
     len1 = struct.unpack_from("<I", fw, OFF_LEN1)[0]
     len2 = struct.unpack_from("<I", fw, OFF_LEN2)[0]
@@ -53,14 +54,14 @@ def cmd_verify(path):
     fw = open(path, "rb").read()
     stored, len1, len2, payload = parse(fw)
     calc = calc_crc(payload)
-    print(f"archivo         : {path}")
-    print(f"tam contenedor  : {len(fw)}")
+    print(f"file            : {path}")
+    print(f"container size  : {len(fw)}")
     print(f"header          : 0x{HDR_LEN:x}")
-    print(f"payload len     : {len(payload)}  (campo@0x10={len1}, @0x14={len2})")
-    print(f"crc32 guardado  : 0x{stored:08x}")
-    print(f"crc32 calculado : 0x{calc:08x}")
+    print(f"payload len     : {len(payload)}  (field@0x10={len1}, @0x14={len2})")
+    print(f"stored crc32    : 0x{stored:08x}")
+    print(f"computed crc32  : 0x{calc:08x}")
     ok = (calc == stored) and (len1 == len(payload) == len2)
-    print("VERIFICADO OK" if ok else "MISMATCH")
+    print("VERIFIED OK" if ok else "MISMATCH")
     return 0 if ok else 1
 
 
@@ -72,7 +73,7 @@ def cmd_extract(path, out):
 
 
 def build(fw_template: bytes, payload: bytes) -> bytes:
-    out = bytearray(fw_template[:HDR_LEN])          # conserva header original
+    out = bytearray(fw_template[:HDR_LEN])          # preserve original header
     struct.pack_into("<I", out, OFF_CRC32, calc_crc(payload))
     struct.pack_into("<I", out, OFF_LEN1, len(payload))
     struct.pack_into("<I", out, OFF_LEN2, len(payload))
@@ -85,13 +86,13 @@ def cmd_build(template_path, payload_path, out_path):
     payload = open(payload_path, "rb").read()
     orig_len = len(fw) - HDR_LEN
     if len(payload) != orig_len:
-        print(f"AVISO: payload {len(payload)} != original {orig_len}. "
-              f"Cambiar el tamano puede desbordar la particion fw0_sys (0x197000). "
-              f"Continuo, pero revisa el limite.")
+        print(f"WARNING: payload {len(payload)} != original {orig_len}. "
+              f"Changing the size may overflow the fw0_sys partition (0x197000). "
+              f"Continuing, but check the limit.")
     out = build(fw, payload)
     open(out_path, "wb").write(out)
     stored, _, _, p = parse(out)
-    print(f"escrito {out_path}  ({len(out)} bytes)  crc32=0x{stored:08x}  "
+    print(f"written {out_path}  ({len(out)} bytes)  crc32=0x{stored:08x}  "
           f"(recheck {'OK' if calc_crc(p)==stored else 'FAIL'})")
 
 
@@ -102,14 +103,14 @@ def cmd_patch(template_path, off_hex, hexbytes, out_path):
     off = int(off_hex, 16) if off_hex.lower().startswith("0x") else int(off_hex, 16)
     patch = bytes.fromhex(hexbytes)
     if off + len(patch) > len(payload):
-        raise SystemExit(f"patch fuera de rango: 0x{off:x}+{len(patch)} > {len(payload)}")
+        raise SystemExit(f"patch out of range: 0x{off:x}+{len(patch)} > {len(payload)}")
     before = bytes(payload[off:off+len(patch)])
     payload[off:off+len(patch)] = patch
     out = build(fw, bytes(payload))
     open(out_path, "wb").write(out)
     print(f"patch @0x{off:x}: {before.hex()} -> {patch.hex()}")
     stored, _, _, p = parse(out)
-    print(f"escrito {out_path}  crc32=0x{stored:08x}  "
+    print(f"written {out_path}  crc32=0x{stored:08x}  "
           f"(recheck {'OK' if calc_crc(p)==stored else 'FAIL'})")
 
 

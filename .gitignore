@@ -1,9 +1,10 @@
-# Solo estos archivos revisados pueden entrar al repositorio.
-# Agregar una ruta exige revisar su contenido antes de permitirla.
+# Only these reviewed files may be added to the repository.
+# Review a file before adding its path to this allowlist.
 /*
 !/.gitattributes
 !/.gitignore
 !/README.md
+!/LICENSE
 !/analysis/
 /analysis/*
 !/analysis/ghidra_scripts/
@@ -15,7 +16,7 @@
 !/analysis/ghidra_scripts/DumpFileTran.java
 !/analysis/reports/
 /analysis/reports/*
-!/analysis/reports/fase1_signature_verdict.md
+!/analysis/reports/phase1_signature_verdict.md
 !/docs/
 /docs/*
 !/docs/APK_ANALYSIS.md

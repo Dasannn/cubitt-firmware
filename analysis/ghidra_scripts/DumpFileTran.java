@@ -1,4 +1,4 @@
-// DumpFileTran.java - enumera strings file_tran, sus xrefs y funciones contenedoras; decompila.
+// DumpFileTran.java - lists file_tran strings, their xrefs and containing functions; decompiles them.
 // Headless: analyzeHeadless <proj> cubitt -process -noanalysis -scriptPath <dir> -postScript DumpFileTran.java
 import ghidra.app.script.GhidraScript;
 import ghidra.app.decompiler.*;
@@ -58,13 +58,13 @@ public class DumpFileTran extends GhidraScript {
                     println("   xref @" + from + "  in FUNC " + f.getName() + " @" + f.getEntryPoint());
                     funcs.add(f.getEntryPoint().getOffset());
                 } else {
-                    // no func: mostrar el bloque de codigo alrededor y su simbolo mas cercano
+                    // no function: show the surrounding code block and its nearest symbol
                     Symbol ps = getSymbolBefore(from);
                     println("   xref @" + from + "  (NO FUNC; nearest sym: "
                         + (ps != null ? ps.getName() + " @" + ps.getAddress() : "none") + ")");
                 }
             }
-            if (!any) println("   (sin xrefs)");
+            if (!any) println("   (no xrefs)");
         }
 
         for (long k : known) funcs.add(k);

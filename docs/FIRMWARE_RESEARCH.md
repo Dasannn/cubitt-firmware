@@ -1,26 +1,26 @@
-# Obtención y análisis local del firmware
+# Local firmware acquisition and analysis
 
-## 1. Obtener la APK
+## 1. Obtain the APK
 
-Con un teléfono propio conectado y autorizado por ADB:
+With your own phone connected and authorized through ADB:
 
 ```powershell
 .\tools\pull_cubitt_apk.ps1
 ```
 
-La salida queda en `apks/com.cubittpros.wear-<fecha>/`. También puedes usar una copia legítima de tu APK. Esta publicación no incluye la app ni sus binarios.
+Output is saved in `apks/com.cubittpros.wear-<timestamp>/`. You can also use a legitimate copy of your APK. This publication does not include the app or its binaries.
 
-## 2. Extraer el asset
+## 2. Extract the asset
 
-La APK analizada contenía este archivo ZIP interno:
+The analyzed APK contained this internal ZIP entry:
 
 ```text
 assets/flutter_assets/packages/creek_blue_manage/assets/images/zephyr.fw
 ```
 
-Abre `base.apk` como ZIP y copia únicamente ese asset a `analysis/firmware_candidates/zephyr.fw`, creando antes la carpeta. Puede faltar o cambiar en otras versiones. No ejecutes los archivos extraídos.
+Open `base.apk` as a ZIP archive and copy only that asset to `analysis/firmware_candidates/zephyr.fw`, creating the directory first. It may be absent or different in other versions. Do not execute extracted files.
 
-## 3. Verificar y extraer el payload
+## 3. Verify and extract the payload
 
 ```powershell
 py tools/repack/repack_ota.py verify analysis/firmware_candidates/zephyr.fw
@@ -29,22 +29,22 @@ Get-FileHash analysis/firmware_candidates/zephyr.fw -Algorithm SHA256
 Get-FileHash analysis/firmware_candidates/zephyr_image.bin -Algorithm SHA256
 ```
 
-Continúa con la extracción solo si `verify` termina correctamente.
+Proceed with extraction only if `verify` succeeds.
 
-| Archivo de referencia | Bytes | SHA256 |
+| Reference file | Bytes | SHA256 |
 |---|---:|---|
 | `zephyr.fw` | 1252064 | `8d08723ed8dd12ab659a58edbd8a64ede3c416716f6ae49ccee9400714ebfd6a` |
 | `zephyr_image.bin` | 1252000 | `f27f23ad76b697ecdc5f9563fdb7016574a6b2fc283da664685732c6cd781606` |
 
-El payload empieza en `0x40`, no en `0x240`. El campo `0x0C` es el CRC32 del payload, no una fecha. El CRC32 de la muestra es `0x673bafc8`. Estos datos corrigen el reporte de extracción inicial, omitido de esta publicación por estar desactualizado.
+The payload starts at `0x40`, not `0x240`. The field at `0x0C` is the payload CRC32, not a date. The sample CRC32 is `0x673bafc8`. These values correct the initial extraction report, omitted from this publication because it was outdated.
 
-## 4. Investigar
+## 4. Investigate
 
-- Importa el payload como binario ARM little endian en Ghidra, con base `0x10010000`; revisa el modo Thumb y la tabla de vectores.
-- Añade `analysis/ghidra_scripts/` al Script Manager para explorar las funciones documentadas. Las direcciones están fijadas para la muestra anterior.
-- Lee [DFU_PROTOCOL.md](DFU_PROTOCOL.md) para el análisis de formatos y [BLE_WIRE_PROTOCOL.md](BLE_WIRE_PROTOCOL.md) para las observaciones de transporte.
-- Usa `tools/adb_cubitt_inventory.ps1`, `tools/find_cubitt_firmware_files.ps1` y `tools/capture_cubitt_logcat.ps1` para generar evidencia local adicional. El capturador limpia el buffer logcat al iniciar; los reportes pueden contener datos personales y permanecen excluidos de Git.
+- Import the payload as a little-endian ARM binary in Ghidra at base address `0x10010000`; check Thumb mode and the vector table.
+- Add `analysis/ghidra_scripts/` to the Script Manager to explore the documented functions. Addresses are fixed for the sample above.
+- Read [DFU_PROTOCOL.md](DFU_PROTOCOL.md) for format analysis and [BLE_WIRE_PROTOCOL.md](BLE_WIRE_PROTOCOL.md) for transport observations.
+- Use `tools/adb_cubitt_inventory.ps1`, `tools/find_cubitt_firmware_files.ps1`, and `tools/capture_cubitt_logcat.ps1` to generate additional local evidence. The capture script clears the logcat buffer at startup; reports may contain personal data and remain excluded from Git.
 
-## Pendiente
+## Pending work
 
-Confirmar el hardware exacto, obtener un respaldo completo y comprobar el bootloader y el método de recuperación antes de intentar instalar imágenes modificadas. Una coincidencia con un SDK de referencia o un CRC correcto no sustituye esas comprobaciones.
+Confirm the exact hardware, obtain a complete backup, and verify the bootloader and recovery method before attempting to install modified images. A match with a reference SDK or a correct CRC does not replace these checks.

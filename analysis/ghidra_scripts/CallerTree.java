@@ -1,5 +1,5 @@
-// CallerTree.java - BFS hacia arriba por el grafo de llamadas desde semillas (escritor/apply sdfs)
-// hasta hallar el dispatcher del canal de archivos BLE. Decompila todo lo encontrado.
+// CallerTree.java - BFS up the call graph from seed functions (sdfs writer/apply)
+// to find the BLE file channel dispatcher. Decompiles all functions found.
 import ghidra.app.script.GhidraScript;
 import ghidra.app.decompiler.*;
 import ghidra.program.model.address.Address;

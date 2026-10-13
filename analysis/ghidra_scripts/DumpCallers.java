@@ -1,5 +1,5 @@
-// DumpCallers.java - sube por el grafo: lista callers de funciones semilla y las decompila.
-// Semillas = parser port_dfu (FUN_100cfe94) + helpers, para hallar el dispatcher protocol_file_tran.
+// DumpCallers.java - walks up the graph: lists callers of seed functions and decompiles them.
+// Seeds = port_dfu parser (FUN_100cfe94) + helpers, to find the protocol_file_tran dispatcher.
 import ghidra.app.script.GhidraScript;
 import ghidra.app.decompiler.*;
 import ghidra.program.model.address.Address;
@@ -46,7 +46,7 @@ public class DumpCallers extends GhidraScript {
                     println("   ref @" + from + "  (NO FUNC) [" + ref.getReferenceType() + "]");
                 }
             }
-            if(!any) println("   (sin callers directos)");
+            if(!any) println("   (no direct callers)");
         }
 
         println("\n===== DECOMPILE CALLERS (" + callers.size() + ") =====");

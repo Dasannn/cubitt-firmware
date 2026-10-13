@@ -1,4 +1,4 @@
-// DumpCrc8.java - decompila las funciones crc8 del file_tran y vuelca cualquier tabla referenciada.
+// DumpCrc8.java - decompiles file_tran crc8 functions and dumps referenced tables.
 // Headless: analyzeHeadless <proj> cubitt -process -noanalysis -postScript DumpCrc8.java
 import ghidra.app.script.GhidraScript;
 import ghidra.app.decompiler.*;
@@ -39,8 +39,8 @@ public class DumpCrc8 extends GhidraScript {
             else
                 println("(decompile failed)");
 
-            // buscar referencias a datos dentro de la funcion (posible tabla crc)
-            println("-- data refs en cuerpo --");
+            // find data references within the function (possible crc table)
+            println("-- data refs in function body --");
             Instruction ins = getInstructionAt(f.getEntryPoint());
             java.util.HashSet<Long> seen = new java.util.HashSet<>();
             while (ins != null && f.getBody().contains(ins.getAddress())) {
@@ -49,7 +49,7 @@ public class DumpCrc8 extends GhidraScript {
                         Address da = ref.getToAddress();
                         if (seen.add(da.getOffset())) {
                             println("  ref -> " + da + " @ins " + ins.getAddress());
-                            println("  bytes(256) desde " + da + ":");
+                            println("  bytes(256) from " + da + ":");
                             dumpBytes(da, 256);
                         }
                     }

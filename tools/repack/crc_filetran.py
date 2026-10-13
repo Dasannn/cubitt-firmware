@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
 """
-crc_filetran.py - Funciones de integridad del transporte file_tran / file_tran_port_dfu
-del Cubitt Viva Pro 2. Reproduccion EXACTA del firmware (zephyr_image.bin), no supuesta.
+crc_filetran.py - Integrity functions for Cubitt Viva Pro 2 file_tran / file_tran_port_dfu.
+Reproduction derived from firmware (zephyr_image.bin).
 
-Origen (verificado por decompilado + bytes crudos del binario):
-  - head_crc  = FUN_100ac3d4 @0x100ac3d4 : suma de bytes & 0xff, luego XOR 0xA5.
-  - data_crc  = FUN_100ac3ac @0x100ac3ac : checksum por tabla de nibbles, seed inicial,
-                usando una tabla de 32 bytes en 0x1011bb64 (file off 0x10bb64).
-                NO es un CRC lineal estandar (Tf[0]=0xB0); es la funcion propia del firmware.
+Source (decompilation and raw binary bytes):
+  - head_crc = FUN_100ac3d4 @0x100ac3d4: sum of bytes & 0xff, then XOR 0xA5.
+  - data_crc = FUN_100ac3ac @0x100ac3ac: nibble-table checksum with an initial seed,
+               using a 32-byte table at 0x1011bb64 (file offset 0x10bb64).
+               NOT a standard linear CRC (Tf[0]=0xB0); this is firmware-specific.
 
-Uso en el parser DFU (FUN_100cfe94), paquete de item ('I'+0xFF):
+Use in the DFU parser (FUN_100cfe94), item packet ('I'+0xFF):
   off0='I' off1=0xFF off2=data_crc off3=head_crc off4=flag off5=hdr_len off6-7=data_len(LE)
   off8=[header (hdr_len)][data (data_len)]
 
-  head_crc (off3) = head_crc(header_bytes)                       # sum^0xA5 sobre hdr_len bytes
-  data_crc (off2) = data_crc(packet[3:8] + header + data, 0)     # seed 0; incluye off3..off7,
-                    # luego header, luego TODOS los bytes de datos (el firmware la corre en
-                    # trozos de 0x80 pero el resultado es el mismo que en una sola pasada).
+  head_crc (off3) = head_crc(header_bytes)                  # sum^0xA5 over hdr_len bytes
+  data_crc (off2) = data_crc(packet[3:8] + header + data, 0) # seed 0; includes off3..off7,
+                   # then header, then ALL data bytes (firmware processes 0x80-byte
+                   # chunks, but the result is the same as a single pass).
 """
 
-# Tabla de 32 bytes @0x1011bb64 (16 low-nibble + 16 high-nibble). Extraida del binario.
+# 32-byte table @0x1011bb64 (16 low-nibble + 16 high-nibble). Extracted from the binary.
 _TABLE = bytes.fromhex(
-    "c0f300182de9fc41066804460a460027"   # table[0..15]  (indexada por nibble bajo)
-    "708dc0f3c5018f4280f09080f06800eb"   # table[16..31] (indexada por nibble alto, +0x10)
+    "c0f300182de9fc41066804460a460027"   # table[0..15]  (indexed by low nibble)
+    "708dc0f3c5018f4280f09080f06800eb"   # table[16..31] (indexed by high nibble, +0x10)
 )
 
 
 def data_crc(data: bytes, seed: int = 0) -> int:
-    """FUN_100ac3ac exacto: c = table[16 + ((c^b)>>4)] ^ table[(c^b)&0xf] por cada byte."""
+    """Exact FUN_100ac3ac: c = table[16 + ((c^b)>>4)] ^ table[(c^b)&0xf] per byte."""
     c = seed & 0xFF
     for b in data:
         x = (c ^ b) & 0xFF
@@ -36,7 +36,7 @@ def data_crc(data: bytes, seed: int = 0) -> int:
 
 
 def head_crc(data: bytes) -> int:
-    """FUN_100ac3d4 exacto: (suma de bytes & 0xff) ^ 0xA5."""
+    """Exact FUN_100ac3d4: (sum of bytes & 0xff) ^ 0xA5."""
     s = 0
     for b in data:
         s = (s + b) & 0xFF
@@ -45,13 +45,13 @@ def head_crc(data: bytes) -> int:
 
 def dfu_item_crcs(header: bytes, data: bytes, flag: int = 0) -> dict:
     """
-    Calcula off2 (data_crc) y off3 (head_crc) para un item DFU dado su header y data.
-    Devuelve tambien los 8 bytes de cabecera del paquete listos para anteponer.
+    Compute off2 (data_crc) and off3 (head_crc) for a DFU item from its header and data.
+    Also return the 8-byte packet header, ready to prepend.
     """
     hlen = len(header)
     dlen = len(data)
     hc = head_crc(header)                              # off3
-    # off2: seed 0 sobre [off3,off4,off5,off6,off7] + header + data
+    # off2: seed 0 over [off3,off4,off5,off6,off7] + header + data
     pre = bytes([hc, flag & 0xFF, hlen & 0xFF, dlen & 0xFF, (dlen >> 8) & 0xFF])
     dc = data_crc(pre + header + data, 0)              # off2
     pkt_hdr = bytes([0x49, 0xFF, dc, hc, flag & 0xFF, hlen & 0xFF,
@@ -59,7 +59,7 @@ def dfu_item_crcs(header: bytes, data: bytes, flag: int = 0) -> dict:
     return {"data_crc": dc, "head_crc": hc, "packet_header": pkt_hdr}
 
 
-# Vectores de prueba pinneados (coinciden con la reproduccion en el binario).
+# Fixed test vectors (matching the binary reproduction).
 _TESTS_DATA = {
     (): 0x00, (0x00,): 0xB0, (0xFF,): 0xCC,
     (0x01, 0x02, 0x03): 0x82, (0x49, 0xFF, 0x00, 0x00, 0x00): 0xF6,

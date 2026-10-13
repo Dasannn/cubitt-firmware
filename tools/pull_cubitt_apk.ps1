@@ -7,19 +7,19 @@ $ErrorActionPreference = "Stop"
 
 $adb = Join-Path $env:LOCALAPPDATA "Android\Sdk\platform-tools\adb.exe"
 if (-not (Test-Path -LiteralPath $adb)) {
-    throw "adb no encontrado en $adb"
+    throw "adb not found at $adb"
 }
 
 Write-Host "Checking connected Android devices..."
 $devices = & $adb devices
 $deviceRows = $devices | Select-Object -Skip 1 | Where-Object { $_ -match "\bdevice$" }
 if (-not $deviceRows) {
-    throw "No hay telefonos Android conectados por ADB. Conecta el telefono, acepta USB debugging y vuelve a ejecutar."
+    throw "No Android phones connected through ADB. Connect the phone, authorize USB debugging, and run again."
 }
 
 $paths = & $adb shell pm path $PackageName
 if ($LASTEXITCODE -ne 0 -or -not $paths) {
-    throw "No se pudo localizar el paquete $PackageName. Ejecuta tools\adb_cubitt_inventory.ps1 para encontrar el nombre correcto."
+    throw "Could not locate package $PackageName. Run tools\adb_cubitt_inventory.ps1 to find the correct name."
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -42,7 +42,7 @@ foreach ($line in $paths) {
     Write-Host "Pulling $remotePath -> $localPath"
     & $adb pull $remotePath $localPath
     if ($LASTEXITCODE -ne 0) {
-        throw "Fallo adb pull para $remotePath"
+        throw "adb pull failed for $remotePath"
     }
 
     $index += 1

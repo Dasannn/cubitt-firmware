@@ -8,13 +8,13 @@ $ErrorActionPreference = "Stop"
 
 $adb = Join-Path $env:LOCALAPPDATA "Android\Sdk\platform-tools\adb.exe"
 if (-not (Test-Path -LiteralPath $adb)) {
-    throw "adb no encontrado en $adb"
+    throw "adb not found at $adb"
 }
 
 $devices = & $adb devices
 $deviceRows = $devices | Select-Object -Skip 1 | Where-Object { $_ -match "\bdevice$" }
 if (-not $deviceRows) {
-    throw "No hay telefonos Android conectados por ADB. Conecta el telefono, acepta USB debugging y vuelve a ejecutar."
+    throw "No Android phones connected through ADB. Connect the phone, authorize USB debugging, and run again."
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"

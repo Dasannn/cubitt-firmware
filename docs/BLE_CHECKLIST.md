@@ -1,49 +1,49 @@
-# Checklist BLE para Cubitt VIVA Pro 2
+# BLE checklist for Cubitt VIVA Pro 2
 
-Objetivo: observar Bluetooth sin escribir datos ni modificar el reloj.
+Goal: observe Bluetooth without writing data or modifying the watch.
 
-## Herramienta
+## Tool
 
-Instala en Android:
+Install on Android:
 
 ```text
 nRF Connect for Mobile
 ```
 
-## Reglas
+## Rules
 
-- No escribas valores en caracteristicas BLE.
-- No ejecutes comandos DFU/OTA.
-- Solo escanea, conecta si es necesario y toma capturas.
-- Si aparece una opcion de `Write`, `Upload`, `DFU` o `Update`, no la uses todavia.
+- Do not write values to BLE characteristics.
+- Do not run DFU/OTA commands.
+- Only scan, connect if necessary, and take screenshots.
+- If you see a `Write`, `Upload`, `DFU`, or `Update` option, do not use it yet.
 
-## Escaneo 1: reloj sin Cubitt Pro abierto
+## Scan 1: watch without Cubitt Pro open
 
-1. Cierra Cubitt Pro.
-2. Abre `nRF Connect`.
-3. Toca `Scan`.
-4. Busca nombres como `Cubitt`, `VIVA`, `VIVA PRO`, o un dispositivo con senal fuerte.
-5. Guarda captura de:
-   - Nombre anunciado.
-   - Direccion BLE o identificador.
+1. Close Cubitt Pro.
+2. Open `nRF Connect`.
+3. Tap `Scan`.
+4. Look for names such as `Cubitt`, `VIVA`, `VIVA PRO`, or a device with a strong signal.
+5. Save screenshots of:
+   - Advertised name.
+   - BLE address or identifier.
    - RSSI.
-   - Datos de advertising.
+   - Advertising data.
 
-## Escaneo 2: reloj vinculado normalmente
+## Scan 2: watch paired normally
 
-1. Abre Cubitt Pro y conecta el reloj.
-2. Vuelve a `nRF Connect`.
-3. Repite el escaneo.
-4. Compara si cambio el nombre, servicios o estado.
+1. Open Cubitt Pro and connect the watch.
+2. Return to `nRF Connect`.
+3. Repeat the scan.
+4. Compare whether the name, services, or state changed.
 
-## Si puedes conectar desde nRF Connect
+## If you can connect from nRF Connect
 
-Documenta:
+Document:
 
-- Servicios GATT.
+- GATT services.
 - UUIDs.
-- Caracteristicas `Read`, `Notify`, `Indicate`, `Write`.
-- Cualquier texto relacionado con:
+- `Read`, `Notify`, `Indicate`, and `Write` characteristics.
+- Any text related to:
   - `OTA`
   - `DFU`
   - `Firmware`
@@ -51,31 +51,31 @@ Documenta:
   - `AI`
   - `Audio`
 
-## Formato para registrar resultados
+## Results template
 
-Copia esto en tus notas:
+Copy this into your notes:
 
 ```text
-Modelo visible:
-Nombre BLE:
-Direccion/ID BLE:
-Fecha:
-Telefono Android:
-Cubitt Pro abierto: si/no
+Visible model:
+BLE name:
+BLE address/ID:
+Date:
+Android phone:
+Cubitt Pro open: yes/no
 
-Servicios:
+Services:
 - UUID:
-  - Caracteristicas:
-  - Permisos:
-  - Notas:
+  - Characteristics:
+  - Permissions:
+  - Notes:
 
-Se observo OTA/DFU: si/no
-Se observo voz/audio/AI: si/no
-Capturas guardadas: si/no
+OTA/DFU observed: yes/no
+Voice/audio/AI observed: yes/no
+Screenshots saved: yes/no
 ```
 
-## Interpretacion
+## Interpretation
 
-- Si hay servicios de voz/audio, puede existir un flujo que pase por el telefono.
-- Si solo hay salud/notificaciones, VITA AI probablemente esta mas cerrado.
-- Si hay OTA/DFU, todavia no significa que podamos modificar firmware; faltan formato, firma, chip y recuperacion.
+- Voice/audio services may indicate a flow through the phone.
+- If only health/notification services are present, VITA AI is probably more closed.
+- OTA/DFU support does not yet mean that firmware can be modified; format, signature, chip, and recovery information are still needed.

@@ -1,53 +1,53 @@
-# Analisis seguro de la APK Cubitt Pro
+# Safe analysis of the Cubitt Pro APK
 
-Objetivo: buscar pistas de VITA AI, BLE, firmware u OTA sin modificar nada.
+Goal: look for VITA AI, BLE, firmware, or OTA clues without modifying anything.
 
-## Herramientas
+## Tools
 
-- Android Studio, opcional.
-- `jadx-gui`, para leer codigo Java/Kotlin de la APK.
-- `tools/scan_cubitt_apk.ps1`, para un primer escaneo local de cadenas.
+- Android Studio, optional.
+- `jadx-gui`, to read Java/Kotlin code from the APK.
+- `tools/scan_cubitt_apk.ps1`, for an initial local string scan.
 
-## Obtener la APK
+## Obtain the APK
 
-Usa una copia legitima de la app `Cubitt Pro` instalada en tu telefono o descargada desde una fuente que tengas derecho a usar.
+Use a legitimate copy of the `Cubitt Pro` app installed on your phone or downloaded from a source you are entitled to use.
 
-App esperada:
+Expected app:
 
 ```text
-Nombre: Cubitt Pro
+Name: Cubitt Pro
 Package: com.cubittpros.wear
 ```
 
-Si tu telefono esta conectado por ADB:
+If your phone is connected through ADB:
 
 ```powershell
 .\tools\pull_cubitt_apk.ps1
 ```
 
-## Escaneo rapido con PowerShell
+## Quick PowerShell scan
 
-Coloca la APK en una carpeta local, por ejemplo:
+Place the APK in a local directory, for example:
 
 ```text
 apks/cubitt-pro.apk
 ```
 
-Ejecuta desde la raiz del proyecto:
+Run from the project root:
 
 ```powershell
 .\tools\scan_cubitt_apk.ps1 -ApkPath .\apks\cubitt-pro.apk
 ```
 
-El script generara un reporte en:
+The script generates a report in:
 
 ```text
 analysis/
 ```
 
-Busca especialmente:
+Look especially for:
 
-- URLs `https://...`
+- `https://...` URLs
 - `vita`
 - `voice`
 - `speech`
@@ -58,33 +58,33 @@ Busca especialmente:
 - `gatt`
 - `uuid`
 - `bluetooth`
-- nombres de SDK o fabricantes
+- SDK or manufacturer names
 
-## Analisis con jadx-gui
+## Analysis with jadx-gui
 
-1. Abre `jadx-gui`.
-2. Carga la APK.
-3. Usa busqueda global.
-4. Busca las mismas palabras clave.
-5. Si encuentras clases de OTA, BLE o VITA, anota:
-   - Nombre de clase.
-   - Paquete.
+1. Open `jadx-gui`.
+2. Load the APK.
+3. Use global search.
+4. Search for the same keywords.
+5. If you find OTA, BLE, or VITA classes, record:
+   - Class name.
+   - Package.
    - UUIDs.
    - URLs.
-   - Nombres de archivos `.bin`, `.fw`, `.zip` o `.json`.
+   - `.bin`, `.fw`, `.zip`, or `.json` filenames.
 
-## Que estamos buscando
+## What we are looking for
 
-La pregunta clave es:
+The key question is:
 
 ```text
-Cuando hablas con VITA AI desde el reloj, el audio/comando pasa por Cubitt Pro?
+When you speak to VITA AI on the watch, does the audio/command pass through Cubitt Pro?
 ```
 
-Si la respuesta es si, se podria investigar un reemplazo hacia Gemini sin firmware.
+If so, replacing that path with Gemini could be investigated without changing firmware.
 
-Si la respuesta es no, y VITA esta dentro del firmware o en servidores cerrados, el reemplazo real dependeria de firmware.
+If not, and VITA runs inside the firmware or on closed servers, an actual replacement would depend on firmware work.
 
-## Siguiente paso para firmware
+## Next firmware step
 
-Sigue `docs/FIRMWARE_RESEARCH.md` para capturar logs, buscar firmware cacheado e identificar el mecanismo OTA antes de intentar cualquier modificacion.
+Follow `docs/FIRMWARE_RESEARCH.md` to capture logs, search for cached firmware, and identify the OTA mechanism before attempting any modification.

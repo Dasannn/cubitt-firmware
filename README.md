@@ -1,68 +1,68 @@
-# Cubitt VIVA Pro 2 — Ingeniería inversa
+# Cubitt VIVA Pro 2 - Reverse Engineering
 
-Documentación y herramientas del proceso de ingeniería inversa del firmware y del protocolo Bluetooth del **Cubitt VIVA Pro 2**. El objetivo es entender cómo la app se comunica con el reloj, cómo se empaqueta una actualización y qué falta para desarrollar modificaciones reproducibles. Proyecto independiente, sin afiliación con Cubitt, Creek o Actions Technology.
+Documentation and tools from the reverse engineering of the **Cubitt VIVA Pro 2** firmware and Bluetooth protocol. The goal is to understand how the app communicates with the watch, how updates are packaged, and what remains to be done to develop reproducible modifications. An independent project, unaffiliated with Cubitt, Creek, or Actions Technology.
 
-**Descargas:** actualmente no hay una versión modificada del firmware disponible para instalar. La guía permite extraer y estudiar la imagen original desde una APK propia. Los cambios locales de Gemini/DeepSeek pertenecen a la app Android y su proxy; no son una modificación del firmware del reloj.
+**Downloads:** no modified firmware is currently available to install. The guide explains how to extract and study the original image from your own APK. The local Gemini/DeepSeek changes concern the Android app and its proxy; they do not modify the watch firmware.
 
-## Qué puedes hacer con este repositorio
+## What you can do with this repository
 
-| Actividad | Cómo empezar | Resultado |
+| Activity | Getting started | Result |
 |---|---|---|
-| Obtener la imagen original de referencia | [Guía de extracción](docs/FIRMWARE_RESEARCH.md) y una APK propia | Contenedor `zephyr.fw` y payload para análisis local |
-| Comprobar integridad e identificar la muestra | `repack_ota.py verify` y SHA256 | Comparación de CRC32, longitudes y hashes documentados |
-| Estudiar el código del firmware | Ghidra y `analysis/ghidra_scripts/` | Funciones, referencias y rutas de llamadas para la muestra analizada |
-| Explorar Bluetooth del reloj | `cubitt_ble_recon.py` y [checklist BLE](docs/BLE_CHECKLIST.md) | Inventario de servicios, características y observación opcional de notificaciones |
-| Entender la comunicación de la app | [Protocolo BLE](docs/BLE_WIRE_PROTOCOL.md) | Interpretación documentada de tramas C1 y transferencias D1–D4 |
-| Experimentar con el contenedor sin conectarse al reloj | `repack_ota.py extract`, `build` y `patch` | Archivos locales reempaquetados con CRC32 del contenedor recalculado |
-| Continuar la investigación | Comparar otra versión y documentar diferencias | Nueva evidencia sobre formatos, plataforma y transporte |
+| Obtain the original reference image | [Extraction guide](docs/FIRMWARE_RESEARCH.md) and your own APK | A `zephyr.fw` container and payload for local analysis |
+| Check integrity and identify the sample | `repack_ota.py verify` and SHA256 | Comparison with the documented CRC32, lengths, and hashes |
+| Study the firmware code | Ghidra and `analysis/ghidra_scripts/` | Functions, references, and call paths for the analyzed sample |
+| Explore the watch's Bluetooth services | `cubitt_ble_recon.py` and the [BLE checklist](docs/BLE_CHECKLIST.md) | Service and characteristic inventory, with optional notification observation |
+| Understand app communication | [BLE protocol notes](docs/BLE_WIRE_PROTOCOL.md) | Documented interpretation of C1 frames and D1-D4 transfers |
+| Experiment with the container without connecting to the watch | `repack_ota.py extract`, `build`, and `patch` | Locally repacked files with the container CRC32 recalculated |
+| Continue the research | Compare another version and document differences | New evidence about formats, platform, and transport |
 
-El reempaquetado produce un archivo de experimentación. Las herramientas publicadas no implementan un instalador de firmware modificado ni una integración lista para usar de Gemini/DeepSeek.
+Repacking produces an experimental file. The published tools do not implement a modified firmware installer or a ready-to-use Gemini/DeepSeek integration.
 
-## Cómo se investigó
+## Research process
 
-1. **Inspección de la app Android.** Se inventariaron el paquete y sus bibliotecas, se buscaron cadenas relacionadas con OTA, BLE y voz, y se revisaron los assets de la APK.
-2. **Extracción y análisis del contenedor.** Se encontró `zephyr.fw` dentro de los assets y se contrastaron sus bytes, tamaños y CRC. La hipótesis inicial de un payload en `0x240` se corrigió a `0x40`.
-3. **Análisis estático en Ghidra.** Se estudiaron funciones de transferencia, validación e items SDFS mediante descompilación y referencias cruzadas. Los scripts incluidos ayudan a repetir esa exploración sobre la misma muestra.
-4. **Comparación con el SDK de plataforma.** Se relacionaron nombres, estructuras y rutas con el SDK público de Actions. Estas correspondencias orientan la investigación; no confirman por sí solas la configuración del reloj.
-5. **Observación de BLE.** Las notas registran exploraciones GATT y capturas de comunicación app–reloj con instrumentación. Se distinguieron las tramas C1, el transporte crudo D1–D4 y los items SDFS. Los scripts originales de instrumentación y las capturas completas no están incluidos; se publican las observaciones técnicas y el explorador GATT.
+1. **Android app inspection.** The package and libraries were inventoried, strings related to OTA, BLE, and voice were searched, and APK assets were inspected.
+2. **Container extraction and analysis.** `zephyr.fw` was found in the assets, and its bytes, sizes, and CRC were checked. The initial assumption that the payload started at `0x240` was corrected to `0x40`.
+3. **Static analysis in Ghidra.** Transfer, validation, and SDFS item functions were studied through decompilation and cross-references. The included scripts help repeat that exploration on the same sample.
+4. **Platform SDK comparison.** Names, structures, and paths were matched against the public Actions SDK. These correspondences guide the research; they do not independently confirm the watch's configuration.
+5. **BLE observation.** The notes record GATT exploration and instrumented captures of app-watch communication. C1 frames, raw D1-D4 transport, and SDFS items were distinguished. The original instrumentation scripts and complete captures are not included; the technical observations and GATT explorer are published.
 
-Este proceso dejó correcciones y preguntas abiertas. Para interpretar los resultados hay que distinguir los bytes comprobados en la muestra, las observaciones registradas en el reloj y las hipótesis derivadas del SDK.
+This process produced corrections and open questions. When interpreting the findings, distinguish bytes verified in the sample, observations recorded on the watch, and hypotheses derived from the SDK.
 
-## Estado
+## Status
 
-- Se analizó una imagen `zephyr.fw` incluida en la APK de Cubitt Pro 2.1.11. Su presencia en la APK no demuestra que sea la imagen instalada o compatible con todas las unidades.
-- El contenedor analizado tiene cabecera de `0x40` bytes, payload de 1.252.000 bytes y CRC32 `0x673bafc8`.
-- Las notas identifican indicios de Zephyr y de la familia Actions ATS3085. La variante exacta del hardware y el mapa de particiones del reloj requieren confirmación independiente.
-- Se documentaron servicios GATT y capturas de los protocolos C1 y file_tran D1–D4.
-- No hay un firmware personalizado compilable ni un procedimiento de flasheo y recuperación validado. La aceptación de imágenes modificadas por el bootloader sigue pendiente.
+- A `zephyr.fw` image bundled with the Cubitt Pro 2.1.11 APK was analyzed. Its presence in the APK does not prove that it is installed on, or compatible with, every unit.
+- The analyzed container has a `0x40`-byte header, a 1,252,000-byte payload, and CRC32 `0x673bafc8`.
+- The notes identify evidence of Zephyr and the Actions ATS3085 family. The exact hardware variant and the watch's partition map require independent confirmation.
+- GATT services and captures of the C1 and file_tran D1-D4 protocols were documented.
+- There is no buildable custom firmware or validated flashing and recovery procedure. Bootloader acceptance of modified images remains unverified.
 
-Las notas de julio de 2026 conservan resultados e hipótesis de distintas etapas. Las afirmaciones históricas de «sin firma», «recuperación confirmada» o «cero riesgo» no constituyen una validación en hardware. Las correcciones posteriores dentro de cada documento prevalecen sobre las observaciones iniciales.
+The July 2026 notes preserve findings and hypotheses from different stages. Historical claims of "no signature," "confirmed recovery," or "zero risk" are not hardware validation. Later corrections within each document take precedence over initial observations.
 
-## Contenido
+## Contents
 
-| Ruta | Contenido |
+| Path | Contents |
 |---|---|
-| [docs/FIRMWARE_RESEARCH.md](docs/FIRMWARE_RESEARCH.md) | Obtención local de la imagen y verificación reproducible |
-| [docs/PLATFORM_SDK.md](docs/PLATFORM_SDK.md) | Correspondencias propuestas con el SDK Actions |
-| [docs/DFU_PROTOCOL.md](docs/DFU_PROTOCOL.md) | Formatos de contenedor, imagen e items SDFS |
-| [docs/BLE_WIRE_PROTOCOL.md](docs/BLE_WIRE_PROTOCOL.md) | Capturas e interpretación del protocolo BLE |
-| [docs/BLE_OTA_ROUTE.md](docs/BLE_OTA_ROUTE.md) | Investigación histórica de la ruta OTA |
-| [docs/BLE_CHECKLIST.md](docs/BLE_CHECKLIST.md) | Registro manual de servicios BLE |
-| [docs/APK_ANALYSIS.md](docs/APK_ANALYSIS.md) | Inspección local de la APK |
-| [analysis/reports/fase1_signature_verdict.md](analysis/reports/fase1_signature_verdict.md) | Evidencias históricas sobre integridad y firma |
-| `tools/repack/` | Verificación, extracción y reempaquetado; checksums experimentales |
-| `tools/ble/` | Escaneo GATT y observación de notificaciones con Bleak |
-| `tools/*.ps1` | Inventario ADB, extracción de APK y búsqueda de firmware/logs |
-| `analysis/ghidra_scripts/` | Scripts de Ghidra con direcciones específicas de la imagen analizada |
+| [docs/FIRMWARE_RESEARCH.md](docs/FIRMWARE_RESEARCH.md) | Local image acquisition and reproducible verification |
+| [docs/PLATFORM_SDK.md](docs/PLATFORM_SDK.md) | Proposed correspondences with the Actions SDK |
+| [docs/DFU_PROTOCOL.md](docs/DFU_PROTOCOL.md) | Container, image, and SDFS item formats |
+| [docs/BLE_WIRE_PROTOCOL.md](docs/BLE_WIRE_PROTOCOL.md) | BLE captures and protocol interpretation |
+| [docs/BLE_OTA_ROUTE.md](docs/BLE_OTA_ROUTE.md) | Historical OTA path research |
+| [docs/BLE_CHECKLIST.md](docs/BLE_CHECKLIST.md) | Manual BLE service recording |
+| [docs/APK_ANALYSIS.md](docs/APK_ANALYSIS.md) | Local APK inspection |
+| [analysis/reports/phase1_signature_verdict.md](analysis/reports/phase1_signature_verdict.md) | Historical evidence about integrity and signatures |
+| `tools/repack/` | Verification, extraction, repacking, and experimental checksums |
+| `tools/ble/` | GATT scanning and notification observation with Bleak |
+| `tools/*.ps1` | ADB inventory, APK extraction, and firmware/log searches |
+| `analysis/ghidra_scripts/` | Ghidra scripts with addresses specific to the analyzed image |
 
-## Uso local
+## Local usage
 
 ```powershell
 git clone https://github.com/Dasannn/cubitt-firmware.git
 cd cubitt-firmware
 ```
 
-Python 3 para reempaquetado; PowerShell y Android SDK Platform Tools para los scripts ADB. Estos últimos buscan `adb.exe` en `%LOCALAPPDATA%\Android\Sdk\platform-tools`. Ejecuta los comandos desde la raíz del repositorio.
+Use Python 3 for repacking, and PowerShell plus Android SDK Platform Tools for the ADB scripts. The latter look for `adb.exe` in `%LOCALAPPDATA%\Android\Sdk\platform-tools`. Run commands from the repository root.
 
 ```powershell
 py tools/repack/crc_filetran.py
@@ -70,9 +70,9 @@ py tools/repack/repack_ota.py verify analysis/firmware_candidates/zephyr.fw
 py tools/repack/repack_ota.py extract analysis/firmware_candidates/zephyr.fw analysis/firmware_candidates/zephyr_image.bin
 ```
 
-Obtén primero tu archivo `.fw` siguiendo [la guía de extracción](docs/FIRMWARE_RESEARCH.md). Los comandos `build` y `patch` del reempaquetador producen archivos locales; recalcular el CRC del contenedor no valida el contenido ni garantiza que arranque. Usa siempre una salida distinta del original.
+First obtain your `.fw` file using the [extraction guide](docs/FIRMWARE_RESEARCH.md). The repacker's `build` and `patch` commands produce local files; recalculating the container CRC does not validate the contents or guarantee that they will boot. Always use an output path different from the original.
 
-Para explorar BLE, instala la dependencia opcional y escanea:
+To explore BLE, install the optional dependency and scan:
 
 ```powershell
 py -m pip install bleak
@@ -80,29 +80,35 @@ py tools/ble/cubitt_ble_recon.py --scan
 py tools/ble/cubitt_ble_recon.py --addr AA:BB:CC:DD:EE:FF --observe 0
 ```
 
-Sustituye la dirección de ejemplo por la de tu reloj. `--observe 0` desactiva las suscripciones; el valor por defecto es 20 segundos. Suscribirse a notificaciones configura el descriptor CCCD aunque no envíe datos de aplicación ni comandos de actualización.
+Replace the example address with your watch's address. `--observe 0` disables subscriptions; the default is 20 seconds. Subscribing to notifications configures the CCCD even though it sends no application data or update commands.
 
-Los scripts de Ghidra usan la base `0x10010000` y direcciones de la imagen indicada en la guía. Sus resultados no son transferibles automáticamente a otras versiones.
+The Ghidra scripts use base address `0x10010000` and addresses from the image identified in the guide. Their results do not automatically apply to other versions.
 
-## Cómo contribuir
+## Contributing
 
-Puedes abrir un issue o un pull request con correcciones, diferencias entre versiones o resultados reproducibles. Indica el modelo, la versión de la app, el SHA256 de la imagen, la herramienta utilizada y los pasos para repetir la observación. Distingue el resultado observado de su interpretación.
+Open an issue or pull request with corrections, differences between versions, or reproducible results. Include the model, app version, image SHA256, tool used, and steps to repeat the observation. Distinguish the observed result from its interpretation.
 
-Los siguientes pasos son confirmar la variante de hardware, contrastar los checksums con más muestras, estudiar el bootloader real y validar un respaldo y una recuperación antes de probar firmware modificado. Para compartir evidencia, usa extractos mínimos anonimizados; elimina direcciones de tus dispositivos, contactos, tokens y otros datos personales.
+Next steps include confirming the hardware variant, checking the checksums against more samples, studying the actual bootloader, and validating backup and recovery before testing modified firmware. Share only minimal anonymized evidence; remove device addresses, contacts, tokens, and other personal data.
 
-## Archivos excluidos
+## Excluded files
 
-No se distribuyen APKs, imágenes de firmware, SDKs de terceros, instalaciones de Ghidra, capturas, bases de datos, claves, certificados, logs, datos personales ni archivos generados. También se excluyen la app Gemini Bridge y los proxies de IA, ajenos al alcance del firmware. Las referencias históricas a `scratchpad/` corresponden a scripts no disponibles en esta publicación.
+APKs, firmware images, third-party SDKs, Ghidra installations, captures, databases, keys, certificates, logs, personal data, and generated files are not distributed. The Gemini Bridge app and AI proxies are also outside the firmware scope. Historical references to `scratchpad/` point to scripts unavailable in this publication.
 
-El `.gitignore` permite únicamente los archivos revisados, por nombre exacto. Revisa cualquier nuevo documento antes de permitirlo: un reporte puede contener identificadores o credenciales aunque sea texto. Esta exclusión no protege contra secretos añadidos a un archivo ya versionado ni contra `git add -f`.
+The `.gitignore` allows only reviewed files by exact name. Review any new document before allowing it: a report may contain identifiers or credentials even when it is plain text. This exclusion does not protect against secrets added to an already tracked file or against `git add -f`.
 
-## Referencias
+## License
 
-- SDK de referencia: https://github.com/lvgl/lv_port_actions_technology
-- Investigación de otra plataforma Actions: https://github.com/ovsky/RE-ATS3603
+The original code and documentation in this repository are released under the [MIT License](LICENSE). You may use, modify, and redistribute them, including commercially, provided you retain the copyright and license notice. Contributions are welcome under the same license.
 
-Los recursos externos conservan sus condiciones de uso. Este repositorio no les atribuye una licencia ni redistribuye su contenido completo.
+This license does not grant rights to third-party firmware, APKs, SDKs, or quoted third-party material. Those remain subject to their respective terms.
 
-## Validación de esta publicación
+## References
 
-Se verificaron los SHA256, tamaño y CRC32 de los archivos locales de referencia y se ejecutó `crc_filetran.py` con sus vectores existentes. Esto comprueba consistencia local, no equivalencia de todos los checksums con el dispositivo. No se ejecutaron flasheos, pruebas BLE/ADB ni scripts de Ghidra durante la preparación.
+- Reference SDK: https://github.com/lvgl/lv_port_actions_technology
+- Research on another Actions platform: https://github.com/ovsky/RE-ATS3603
+
+External resources retain their own terms. This repository does not relicense them or redistribute their complete contents.
+
+## Publication validation
+
+The SHA256 hashes, sizes, and CRC32 of the local reference files were verified, and `crc_filetran.py` was run with its existing vectors. This checks local consistency, not equivalence of every checksum with the device. No flashing, BLE/ADB tests, or Ghidra scripts were run during publication preparation.

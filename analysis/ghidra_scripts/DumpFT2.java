@@ -1,4 +1,4 @@
-// DumpFT2.java - decompila funciones que contienen direcciones dadas (handlers file_tran).
+// DumpFT2.java - decompiles functions containing the given addresses (file_tran handlers).
 import ghidra.app.script.GhidraScript;
 import ghidra.app.decompiler.*;
 import ghidra.program.model.address.Address;
@@ -23,7 +23,7 @@ public class DumpFT2 extends GhidraScript {
             Address ad = toAddr(a);
             Function f = getFunctionContaining(ad);
             if (f == null) {
-                // intenta disasm + crear funcion en esa direccion
+                // try disassembly and function creation at this address
                 disassemble(ad);
                 f = createFunction(ad, null);
                 if (f == null) f = getFunctionContaining(ad);

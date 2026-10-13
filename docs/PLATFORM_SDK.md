@@ -1,71 +1,73 @@
-# Fase 2 - SDK de plataforma publico (fuente real)
+# Phase 2 - Public platform SDK (actual source code)
 
-> Nota de publicacion: registro historico de investigacion, con hipotesis pendientes.
-> Los CRC observados no demuestran que el bootloader acepte firmware modificado.
-> El mapa del SDK, la recuperacion ADFU y el flasheo completo no se han validado en el reloj.
-> Las rutas a binarios, capturas y `scratchpad/` son referencias locales no distribuidas.
-> Consulta el README para el alcance actual.
+> Publication note: historical research notes with unresolved hypotheses.
+> Observed CRCs do not prove that the bootloader accepts modified firmware.
+> The SDK map, ADFU recovery, and full flashing have not been validated on the watch.
+> Binary, capture, and `scratchpad/` paths are local references not distributed here.
+> See the README for the current scope.
 
-Fecha: 2026-07-06
+Date: 2026-07-06
 
-## Identificacion del SoC/plataforma
+## SoC/platform identification
 
-Evidencia dentro de `zephyr_image.bin`:
-- string `bt_watch` @0x68193 (aplicacion).
-- string `lark` @0x8b50c (codename de board Actions ATS3085), `board` @0x88394.
-- DSP core, algoritmos de salud (GH30x), BLE+RFCOMM dual, watch faces, SPI-NOR.
+Evidence inside `zephyr_image.bin`:
+- String `bt_watch` @0x68193 (application).
+- String `lark` @0x8b50c (Actions ATS3085 board codename), `board` @0x88394.
+- DSP core, health algorithms (GH30x), dual BLE+RFCOMM, watch faces, SPI-NOR.
 
-Conclusion: el Cubitt Viva Pro 2 usa un SoC **Actions ATS3085-series** (BT dual-mode smartwatch,
-MCU+DSP), board familia **lark / ats3085x_dev_watch_ext_nor** (NOR externo SPI). Firmware = Zephyr
-+ aplicacion `bt_watch` de Actions Technology.
+Conclusion: the Cubitt Viva Pro 2 uses an **Actions ATS3085-series** SoC (dual-mode BT smartwatch,
+MCU+DSP), **lark / ats3085x_dev_watch_ext_nor** board family (external SPI NOR). Firmware = Zephyr
++ Actions Technology's `bt_watch` application.
 
-## Fuente real localizada
+## Actual source located
 
-Repo: **github.com/lvgl/lv_port_actions_technology** (branch `master`, ~330 MB, 17,007 archivos).
-Contiene el arbol `action_technology_sdk/` = SDK Actions Technology basado en Zephyr. Es fuente real
-compilable, no RE aproximado. Coincide 1:1 con el binario extraido.
+Repository: **github.com/lvgl/lv_port_actions_technology** (`master` branch, ~330 MB, 17,007 files).
+Contains the `action_technology_sdk/` tree: the Zephyr-based Actions Technology SDK. This is actual
+buildable source, not an approximate reconstruction. The historical analysis reported a 1:1 match
+with the extracted binary; see the publication note above for the limits of that conclusion.
 
-Mapeo binario -> fuente:
+Binary-to-source mapping:
 
-| Elemento en el binario | Ruta en el SDK |
-|------------------------|----------------|
-| Aplicacion `bt_watch` | `action_technology_sdk/application/bt_watch/src/` |
+| Binary element | SDK path |
+|---|---|
+| `bt_watch` application | `action_technology_sdk/application/bt_watch/src/` |
 | Bootloader / mbrec | `action_technology_sdk/bootloader/`, `bootloader/tools/prebuilt/lark/bin/mbrec.bin` |
-| ADFU (recuperacion USB) | `bootloader/tools/prebuilt/lark/common/bin/adfus.bin`, `application/bt_watch/prebuild/ATT/att_adfu.bin` |
-| Empaquetado .fw (contenedor/particiones) | `application/.../boards/ats3085*_dev_watch_ext_nor/firmware.xml` + `fwimage.cfg` |
-| Watch faces / recursos (`bt_watch.res/.sty/.enG/.zhC`) | `application/.../boards/ats3085s_dev_watch_ext_nor/res/bt_watch.*` |
-| SDFS (filesystem de recursos) + DSP | `application/.../boards/.../sdfs_k/` (incl. `adMUSIC.dsp`) |
+| ADFU (USB recovery) | `bootloader/tools/prebuilt/lark/common/bin/adfus.bin`, `application/bt_watch/prebuild/ATT/att_adfu.bin` |
+| .fw packaging (container/partitions) | `application/.../boards/ats3085*_dev_watch_ext_nor/firmware.xml` + `fwimage.cfg` |
+| Watch faces / resources (`bt_watch.res/.sty/.enG/.zhC`) | `application/.../boards/ats3085s_dev_watch_ext_nor/res/bt_watch.*` |
+| SDFS (resource filesystem) + DSP | `application/.../boards/.../sdfs_k/` (including `adMUSIC.dsp`) |
 | Crypto (AES/SHA/CMAC/RSA/ECDSA) | `thirdparty/crypto/mbedtls/`, `bootloader/soc/arm/actions/leopard/soc_rsa.c` |
-| CRC de particion/imagen | `bootloader/include/partition/partition.h` |
+| Partition/image CRC | `bootloader/include/partition/partition.h` |
 
-## Implicacion para firma / secure-boot
+## Implications for signatures / secure boot
 
-El SDK trae una board de bootloader **con firma**: `bootloader/boards/arm/ats3085s_dev_watch_sign`
-y `soc_rsa.c`. Es decir, **la firma RSA de imagen es una opcion de build de la plataforma**, no
-obligatoria. La evidencia del binario de Cubitt (contenedor OTA con solo CRC32; ruta DFU
-`file_tran_port_dfu` valida con `write_crc32`; validacion de particion por `hdr->crc`) indica que en
-esta unidad **la firma NO esta activada**: se usa la variante no-sign (solo CRC).
+The SDK includes a **signed** bootloader board: `bootloader/boards/arm/ats3085s_dev_watch_sign`
+and `soc_rsa.c`. Thus, **RSA image signing is a platform build option**, not mandatory.
+The Cubitt binary evidence (OTA container with CRC32 only; the `file_tran_port_dfu` DFU path
+validating through `write_crc32`; partition validation through `hdr->crc`) was interpreted as
+indicating that **signing is NOT enabled** on this unit: the unsigned variant uses CRC only.
 
-Confirmacion 100% pendiente: leer el `mbrec`/bootloader real del reloj (dump ADFU, Fase 5) y
-comparar contra la board `_sign` vs no-sign del SDK.
+Full confirmation is pending: read the watch's actual `mbrec`/bootloader (ADFU dump, Phase 5)
+and compare it against the SDK's `_sign` and unsigned boards.
 
-## Uso para ensenanza
+## Educational use
 
-- Leer `application/bt_watch/src/` da la arquitectura real (BLE, DFU, OTA, UI, sensores) que en el
-  binario solo se ve como pseudo-C.
-- `firmware.xml` + `fwimage.cfg` explican como se arma el `.fw` (contenedor 5A8778A5 + HTCA + tabla
-  de particiones + CRCs). Es la receta para reempacar en Fase 6.
-- ADFU (`adfus.bin`) + Actions Product Tool = via de flasheo/recuperacion.
+- Reading `application/bt_watch/src/` exposes the actual architecture (BLE, DFU, OTA, UI, sensors)
+  that only appears as pseudo-C in the binary.
+- `firmware.xml` + `fwimage.cfg` explain how the `.fw` is assembled (5A8778A5 container + HTCA +
+  partition table + CRCs). This provides a repacking reference for Phase 6.
+- ADFU (`adfus.bin`) + Actions Product Tool provide a platform flashing/recovery route.
 
-## Caveat legal
+## Third-party licensing
 
-Ninguno de los dos repos declara licencia explicita (GitHub: license = none). Para estudio personal
-y clase es publico y accesible; redistribuir o derivar producto tiene limites legales
-(codigo propiedad de Actions Technology, port publicado por LVGL). Tratar como referencia de estudio,
-no como codigo con licencia abierta.
+The original investigation recorded no explicit license for either reference repository
+(GitHub: license = none). Public availability does not itself grant redistribution rights.
+Treat the Actions Technology code and the LVGL-published port as study references; check their
+own terms before reuse. The MIT license of this research repository does not relicense them.
 
-## Referencia secundaria
+## Secondary reference
 
-`github.com/ovsky/RE-ATS3603`: RE de Actions ATS3603 (handheld, no watch). Aporta `dump_mbrec.py` y
-`decrypt.c`. Util como referencia de mbrec/ADFU, pero es otro SoC (ATS3603) y esas imagenes van
-cifradas; la nuestra (ATS3085) esta en texto plano, asi que `decrypt.c` probablemente no aplica.
+`github.com/ovsky/RE-ATS3603`: reverse engineering of Actions ATS3603 (handheld, not a watch).
+Provides `dump_mbrec.py` and `decrypt.c`. Useful as an mbrec/ADFU reference, but it concerns a
+different SoC (ATS3603), and those images are encrypted. Our ATS3085 sample is plaintext,
+so `decrypt.c` probably does not apply.
